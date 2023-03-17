@@ -6,7 +6,7 @@ import getopt
 
 def usage():
     print(' This software plots the demo results:')
-    print('>python plotdemo.py -n=8 [-c|cov] [-o|--out] [-c|--cmap] [-g|--geo] [-i|--vmin] [-a|--vmax]')
+    print('>python plotdemo.py -n=8 [-c|cov] [-o|--out] [-c|--cmap] [-g|--geo] [-i|--vmin] [-a|--vmax] [-p|--path]')
     print('-n : is the nside of the input map (nside max = 256 with the default map)')
     print('--cov|-c     (optional): use scat_cov instead of scat')
     print('--out|-o     (optional): If not specified save in *_demo_*.')
@@ -14,6 +14,7 @@ def usage():
     print('--geo|-g     (optional): If specified use cartview')
     print('--vmin|-i    (optional): specify the minimum value')
     print('--vmax|-a    (optional): specify the maximum value')
+    print('--path|-p    (optional): Define the path where output file are written (default data)')
     exit(0)
     
 def main():
@@ -32,6 +33,7 @@ def main():
     docart=False
     vmin=-3
     vmax= 3
+    outpath='data/'
     
     for o, a in opts:
         if o in ("-c","--cov"):
@@ -48,6 +50,8 @@ def main():
             vmin=float(a[1:])
         elif o in ("-a", "--vmax"):
             vmax=float(a[1:])
+        elif o in ("-p", "--path"):
+            outpath=a[1:]
         else:
             print(o,a)
             assert False, "unhandled option"
@@ -63,11 +67,11 @@ def main():
     else:
         import foscat.scat as sc
 
-    refX  = sc.read('in_%s_%d'%(outname,nside))
-    start = sc.read('st_%s_%d'%(outname,nside))
-    out   = sc.read('out_%s_%d'%(outname,nside))
+    refX  = sc.read(outpath+'in_%s_%d'%(outname,nside))
+    start = sc.read(outpath+'st_%s_%d'%(outname,nside))
+    out   = sc.read(outpath+'out_%s_%d'%(outname,nside))
 
-    log= np.load('out_%s_log_%d.npy'%(outname,nside))
+    log= np.load(outpath+'out_%s_log_%d.npy'%(outname,nside))
     plt.figure(figsize=(6,6))
     plt.plot(np.arange(log.shape[0])+1,log,color='black')
     plt.xscale('log')
@@ -78,13 +82,13 @@ def main():
     out.plot(name='Output',color='red',hold=False)
     (refX-out).plot(name='Diff',color='purple',hold=False)
 
-    im = np.load('in_%s_map_%d.npy'%(outname,nside))
+    im = np.load(outpath+'in_%s_map_%d.npy'%(outname,nside))
     try:
-        mm = np.load('mm_%s_map_%d.npy'%(outname,nside))
+        mm = np.load(outpath+'mm_%s_map_%d.npy'%(outname,nside))
     except:
         mm = np.ones([im.shape[0]])
-    sm = np.load('st_%s_map_%d.npy'%(outname,nside))
-    om = np.load('out_%s_map_%d.npy'%(outname,nside))
+    sm = np.load(outpath+'st_%s_map_%d.npy'%(outname,nside))
+    om = np.load(outpath+'out_%s_map_%d.npy'%(outname,nside))
 
     idx=hp.ring2nest(nside,np.arange(12*nside**2))
     plt.figure(figsize=(10,6))
