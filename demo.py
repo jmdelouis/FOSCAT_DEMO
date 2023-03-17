@@ -171,7 +171,7 @@ def main():
         mask = args[2]
 
         if docross:
-            learn=scat_operator.eval(im,image2=x,Imaginary=True,mask=mask)
+            learn=scat_operator.eval(im,image2=x,Auto=False,mask=mask)
         else:
             learn=scat_operator.eval(x,mask=mask)
             
@@ -184,7 +184,7 @@ def main():
         return(loss)
 
     if docross:
-        refX=scat_op.eval(im,image2=im,Imaginary=True,mask=mask)
+        refX=scat_op.eval(im,image2=im,Auto=False,mask=mask)
     else:
         refX=scat_op.eval(im,mask=mask)
     
