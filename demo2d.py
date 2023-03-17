@@ -11,23 +11,23 @@ import foscat.Synthesis as synthe
 
 def usage():
     print(' This software is a demo of the foscat library:')
-    print('>python demo2d.py -n=8 [-c|--cov][-s|--steps=3000][-S=1234|--seed=1234][-x|--xstat][-p|--p00][-g|--gauss][-k|--k5x5][-d|--data][-o|--out]')
+    print('>python demo2d.py -n=8 [-c|--cov][-s|--steps=3000][-S=1234|--seed=1234][-x|--xstat] [-g|--gauss][-k|--k5x5][-d|--data][-o|--out] [-p|--path]')
     print('-n : is the n of the input map (nxn)')
     print('--cov (optional): use scat_cov instead of scat.')
     print('--steps (optional): number of iteration, if not specified 1000.')
     print('--seed  (optional): seed of the random generator.')
     print('--xstat (optional): work with cross statistics.')
-    print('--p00   (optional): Loss only computed on p00.')
     print('--gauss (optional): convert Venus map in gaussian field.')
     print('--k5x5  (optional): Work with a 5x5 kernel instead of a 3x3.')
     print('--data  (optional): If not specified use Venu_256.npy.')
     print('--out   (optional): If not specified save in *_demo_*.')
+    print('--path  (optional): Define the path where output file are written (default data)')
     exit(0)
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:cS:s:xpgkd:o:", \
-                                   ["nside", "cov","seed","steps","xstat","p00","gauss","k5x5","data","out"])
+        opts, args = getopt.getopt(sys.argv[1:], "n:cS:s:xpgkd:o:p:", \
+                                   ["nside", "cov","seed","steps","xstat","p00","gauss","k5x5","data","out","path"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -38,12 +38,12 @@ def main():
     nside=-1
     nstep=1000
     docross=False
-    dop00=False
     dogauss=False
     KERNELSZ=3
     seed=1234
     outname='demo'
-    data="TURBU.npy"
+    outpath='data/'
+    data="data/TURBU.npy"
     
     for o, a in opts:
         if o in ("-c","--cov"):
@@ -67,8 +67,8 @@ def main():
             dogauss=True
         elif o in ("-k", "--k5x5"):
             KERNELSZ=5
-        elif o in ("-p", "--p00"):
-            dop00=True
+        elif o in ("-p", "--path"):
+            outpath=a[1:]
         else:
             assert False, "unhandled option"
 
@@ -90,7 +90,7 @@ def main():
     # DEFINE A PATH FOR scratch data
     # The data are storred using a default nside to minimize the needed storage
     #=================================================================================
-    scratch_path = '../data'
+    scratch_path = 'data'
 
     #=================================================================================
     # Get data
@@ -139,10 +139,7 @@ def main():
         else:
             learn=scat_operator.eval(x)
             
-        if dop00:
-            loss=scat_operator.bk_reduce_mean(scat_operator.bk_square(ref.P00[0,0,:]-learn.P00[0,0,:]))
-        else:
-            loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
+        loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
 
         return(loss)
 
@@ -178,14 +175,14 @@ def main():
         start=scat_op.eval(imap)
         out =scat_op.eval(omap)
     
-    np.save('in2d_%s_map_%d.npy'%(outname,nside),im)
-    np.save('st2d_%s_map_%d.npy'%(outname,nside),imap)
-    np.save('out2d_%s_map_%d.npy'%(outname,nside),omap)
-    np.save('out2d_%s_log_%d.npy'%(outname,nside),sy.get_history())
+    np.save(outpath+'in2d_%s_map_%d.npy'%(outname,nside),im)
+    np.save(outpath+'st2d_%s_map_%d.npy'%(outname,nside),imap)
+    np.save(outpath+'out2d_%s_map_%d.npy'%(outname,nside),omap)
+    np.save(outpath+'out2d_%s_log_%d.npy'%(outname,nside),sy.get_history())
 
-    refX.save('in2d_%s_%d'%(outname,nside))
-    start.save('st2d_%s_%d'%(outname,nside))
-    out.save('out2d_%s_%d'%(outname,nside))
+    refX.save(outpath+'in2d_%s_%d'%(outname,nside))
+    start.save(outpath+'st2d_%s_%d'%(outname,nside))
+    out.save(outpath+'out2d_%s_%d'%(outname,nside))
 
     print('Computation Done')
     sys.stdout.flush()
