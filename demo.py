@@ -46,7 +46,7 @@ def main():
     dok128=False
     seed=1234
     outname='demo'
-    data="LSS_map_nside128.npy"
+    data="data/LSS_map_nside128.npy"
     instep=16
     norient=4
     
@@ -101,7 +101,7 @@ def main():
     # DEFINE A PATH FOR scratch data
     # The data are storred using a default nside to minimize the needed storage
     #=================================================================================
-    scratch_path = '../data'
+    scratch_path = 'data'
 
     #=================================================================================
     # Function to reduce the data used in the FoCUS algorithm 
