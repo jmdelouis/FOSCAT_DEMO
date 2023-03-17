@@ -2,13 +2,24 @@
 
 This package provides scripts to show how to use the library foscat to compute syntheic field from one image.
 
-# Install foscat libray
+# Install foscat library
 
->pip install foscat
+The last version of the foscat library can be installed using PyPi:
+```
+pip install foscat
+```
 
-# run the demo on the shere
+# Spherical field demo
 
->python demo.py -n=32 -k -c
+## compute a synthetic field
+```
+python demo.py -n=32 -k -c
+```
+
+## plot the result
+```
+python plotdemo.py -n=32 -c
+```
 
 # run the demo for 2D data
 
