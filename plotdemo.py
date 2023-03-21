@@ -29,7 +29,7 @@ def main():
     cov=False
     nside=-1
     outname='demo'
-    cmap='jet'
+    cmap='viridis'
     docart=False
     vmin=-3
     vmax= 3
@@ -93,15 +93,11 @@ def main():
     idx=hp.ring2nest(nside,np.arange(12*nside**2))
     plt.figure(figsize=(10,6))
     if docart:
-        hp.cartview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,1),nest=False,title='Model')
-        hp.cartview(sm/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,2),nest=True,title='Start')
-        hp.cartview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,3),nest=True,title='Output')
-        hp.cartview((im-om)/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,4),nest=True,title='Diff')
+        hp.cartview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
+        hp.cartview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
     else:
-        hp.mollview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,1),nest=False,title='Model')
-        hp.mollview(sm/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,2),nest=True,title='Start')
-        hp.mollview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,3),nest=True,title='Output')
-        hp.mollview((im-om)/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,4),nest=True,title='Diff')
+        hp.mollview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
+        hp.mollview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
 
     cli=hp.anafast((mm*(im-np.median(im)))[idx])
     clo=hp.anafast((mm*(om-np.median(om)))[idx])
