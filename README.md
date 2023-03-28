@@ -1,6 +1,6 @@
 # FOSCAT_DEMO
 
-This package provides scripts to show how to use the library foscat to compute syntheic field from one image.
+This package provides python scripts showing how to use the foscat library to compute synthetic fields having pattern with the same statistical description than a given image.
 
 # Install foscat library
 
