@@ -119,8 +119,7 @@ def main():
                      gpupos=2,
                      use_R_format=True,
                      chans=1,
-                     DODIV=True,
-                     all_type='float64')
+                     all_type='float32')
 
     scat_op.plot_ww()
     plt.show()
