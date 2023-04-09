@@ -80,7 +80,7 @@ def main():
     refX.plot(name='Model',lw=6)
     start.plot(name='Input',color='orange',hold=False)
     out.plot(name='Output',color='red',hold=False)
-    (refX-out).plot(name='Diff',color='purple',hold=False)
+    #(refX-out).plot(name='Diff',color='purple',hold=False)
 
     im = np.load(outpath+'in_%s_map_%d.npy'%(outname,nside))
     try:
@@ -91,14 +91,27 @@ def main():
     om = np.load(outpath+'out_%s_map_%d.npy'%(outname,nside))
 
     idx=hp.ring2nest(nside,np.arange(12*nside**2))
-    plt.figure(figsize=(10,6))
-    if docart:
-        hp.cartview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
-        hp.cartview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
+    
+    plt.figure(figsize=(6,6))
+    if om.dtype!='complex64' and om.dtype!='complex128':
+        if docart:
+            hp.cartview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
+            hp.cartview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
+        else:
+            hp.mollview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
+            hp.mollview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
     else:
-        hp.mollview(im[idx]/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,1),nest=False,title='Model')
-        hp.mollview(om/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,1,2),nest=True,title='Output')
-
+        if docart:
+            hp.cartview(im[idx].real/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,1),nest=False,title='Model')
+            hp.cartview(im[idx].imag/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,2),nest=False,title='Model')
+            hp.cartview(om.real/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,3),nest=True,title='Output')
+            hp.cartview(om.imag/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,4),nest=True,title='Output')
+        else:
+            hp.mollview(im[idx].real/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,1),nest=False,title='Model')
+            hp.mollview(im[idx].imag/mm[idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,2),nest=False,title='Model')
+            hp.mollview(om.real/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,3),nest=True,title='Output')
+            hp.mollview(om.imag/mm,cmap=cmap,min=vmin,max=vmax,hold=False,sub=(2,2,4),nest=True,title='Output')
+        
     cli=hp.anafast((mm*(im-np.median(im)))[idx])
     clo=hp.anafast((mm*(om-np.median(om)))[idx])
     cldiff=hp.anafast((mm*(im-om-np.median(om)))[idx])
