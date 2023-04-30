@@ -82,7 +82,7 @@ def main():
         refX.plot(name='Model %s'%(p[ii]),lw=6)
         for k in range(10):
             out   = sc.read(outpath+'outn_%s_%d_%d_%d'%(outname,nside,ii,k))
-            out.plot(name='Noise[%d] %s'%(k,p[ii]),color='gray',hold=False)
+            out.plot(name='Noise[%d] %s'%(k,p[ii]),color='gray',hold=False,legend=(k==0))
 
         out   = sc.read(outpath+'out_%s_%d_%d'%(outname,nside,ii))
         start.plot(name='Input %s'%(p[ii]),color='orange',hold=False,lw=2)
@@ -114,6 +114,8 @@ def main():
     except:
         mm = np.ones([im.shape[0]])
     sm = np.load(outpath+'st_%s_map_%d.npy'%(outname,nside))
+    sm1 = np.load(outpath+'st1_%s_map_%d.npy'%(outname,nside))
+    sm2 = np.load(outpath+'st2_%s_map_%d.npy'%(outname,nside))
     om = np.load(outpath+'out_%s_map_%d.npy'%(outname,nside))
 
     print(im.shape,om.shape)
@@ -141,28 +143,54 @@ def main():
     hp.gnomview(om[0,idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(1,3,2),nest=False,title='Output Q',rot=[-40,30],reso=8,xsize=400)
     hp.gnomview(om[0,idx]-im[0,idx],cmap=cmap,min=vmin,max=vmax,hold=False,sub=(1,3,3),nest=False,title='Diff Q',rot=[-40,30],reso=8,xsize=400)
 
-
+    def avvcl(cl,dx=1.2):
+        i1=2
+        x=cl[0].copy()
+        y=cl.copy()
+        delta=1
+        ii=0
+        while i1+dx<x.shape[0]:
+            x[ii]=i1+(delta-1)/2
+            y[:,ii]=np.mean(cl[:,i1:int(i1+delta)],1)
+            i1=int(i1+delta)
+            delta*=dx
+            ii+=1
+        return x[0:ii],y[:,0:ii]
+            
     def docl(data,mm,idx):
         aim=np.zeros([3,12*nside**2])
         aim[1]=mm[idx]*data[0,idx]
         aim[2]=mm[idx]*data[1,idx]
         aim[0]=np.sqrt(aim[1]**2+aim[2]**2)
         return hp.anafast(aim)
+    
+    def doclX(data1,data2,mm,idx):
+        aim=np.zeros([3,12*nside**2])
+        aim[1]=mm[idx]*data1[0,idx]
+        aim[2]=mm[idx]*data1[1,idx]
+        aim[0]=np.sqrt(aim[1]**2+aim[2]**2)
+        aim2=np.zeros([3,12*nside**2])
+        aim2[1]=mm[idx]*data2[0,idx]
+        aim2[2]=mm[idx]*data2[1,idx]
+        aim2[0]=np.sqrt(aim2[1]**2+aim2[2]**2)
+        return hp.anafast(aim,map2=aim2)
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(6,8))
     for k in range(3):
-        cli=docl(im,mask[k],idx)
-        cls=docl(sm,mask[k],idx)
-        clo=docl(om,mask[k],idx)
-        cldiff=docl(im-om,mask[k],idx)
+        x1,clx=avvcl(doclX(sm1,sm2,mask[k],idx))
+        x2,cli=avvcl(docl(im,mask[k],idx))
+        x3,cls=avvcl(docl(sm,mask[k],idx))
+        x4,clo=avvcl(docl(om,mask[k],idx))
+        x5,cldiff=avvcl(docl(im-om,mask[k],idx))
         
         for ii in range(2):
             plt.subplot(3,2,1+ii+2*k)
             
-            plt.plot(cli[ii+1],color='black',label=r'Model $f_{sky}=%.2f$'%(mask[k].mean()),lw=6)
-            plt.plot(cls[ii+1],color='blue',label=r'Input')
-            plt.plot(clo[ii+1],color='orange',label=r'Output')
-            plt.plot(cldiff[ii+1],color='red',label=r'Diff')
+            plt.plot(x1,clx[ii+1],color='grey',label=r'Cross')
+            plt.plot(x2,cli[ii+1],color='black',label=r'Model $f_{sky}=%.2f$'%(mask[k].mean()),lw=6)
+            plt.plot(x3,cls[ii+1],color='blue',label=r'Input')
+            plt.plot(x4,clo[ii+1],color='orange',label=r'Output')
+            plt.plot(x5,cldiff[ii+1],color='red',label=r'Diff')
             plt.yscale('log')
             plt.xscale('log')
             plt.legend()
