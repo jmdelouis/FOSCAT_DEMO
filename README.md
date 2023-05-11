@@ -13,7 +13,7 @@ pip install foscat
 
 ## compute a synthetic image
 ```
-python demo.py -n=32 -k -c
+python demo.py -n=32 -k -c -l
 ```
 The *demo.py* script serves as a demonstration of the capabilities of the foscat library. It utilizes the Cross Wavelet Scattering Transform to generate a Healpix map that possesses the same characteristics as a specified input map. 
 ```
