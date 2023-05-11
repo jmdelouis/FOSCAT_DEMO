@@ -41,7 +41,7 @@ def main():
 
     cov=False
     nside=-1
-    nstep=1000
+    nstep=300
     docross=False
     dogauss=False
     KERNELSZ=3

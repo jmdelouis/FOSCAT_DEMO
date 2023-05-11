@@ -25,7 +25,7 @@ def main():
     cov=False
     nside=-1
     outname='demo'
-    cmap='jet'
+    cmap='viridis'
     
     for o, a in opts:
         if o in ("-c","--cov"):
@@ -54,15 +54,15 @@ def main():
     
     n=im.shape[0]
     amp=im.std()*3
-    plt.figure(figsize=(16,6))
+    plt.figure(figsize=(16,5))
     plt.subplot(1,3,1)
-    plt.imshow(im,cmap='jet',origin='lower',aspect='auto',vmin=-amp,vmax=amp)
+    plt.imshow(im,cmap=cmap,origin='lower',aspect='auto',vmin=-amp,vmax=amp)
     plt.title('Input')
     plt.subplot(1,3,2)
-    plt.imshow(omap,cmap='jet',origin='lower',aspect='auto',vmin=-amp,vmax=amp)
+    plt.imshow(omap,cmap=cmap,origin='lower',aspect='auto',vmin=-amp,vmax=amp)
     plt.title('Ouput')
     plt.subplot(1,3,3)
-    plt.imshow(im-omap,cmap='jet',origin='lower',aspect='auto',vmin=-amp,vmax=amp)
+    plt.imshow(im-omap,cmap=cmap,origin='lower',aspect='auto',vmin=-amp,vmax=amp)
     plt.title('difference')
     plt.show()
 

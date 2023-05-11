@@ -3,6 +3,7 @@ import os, sys
 import matplotlib.pyplot as plt
 import healpy as hp
 import getopt
+from scipy.ndimage import gaussian_filter
 
 #=================================================================================
 # INITIALIZE FoCUS class
@@ -96,15 +97,19 @@ def main():
     # Get data
     #=================================================================================
     im=np.load('sar_test.npy')
-    print(im.shape,nside)
     im=im[512-nside//2:512+nside//2,512-nside//2:512+nside//2]
     im=im-np.median(im)
-    tf=np.load('sar_ntf.npy')
-    tf=np.mean(np.mean(tf.reshape(nside,tf.shape[0]//nside,nside,tf.shape[1]//nside),3),1)
+    tfin=abs(np.fft.fft2(im))
 
+    tf=gaussian_filter(np.roll(np.roll(tfin,-nside//2,0),-nside//2,1),sigma=4)
+    x=np.repeat(np.arange(nside)-nside/2,nside).reshape(nside,nside)
+    lim=nside/8.0
+    tf=tf*(1-0.9*np.exp(-(x*x+x.T*x.T)/(lim*lim)))
+    tf=np.roll(np.roll(tf,-nside//2,0),-nside//2,1)/(nside)
+
+    
     xs=nside//2
 
-    tfin=abs(np.fft.fft2(im))
     plt.figure(figsize=(16,16))
     plt.subplot(2,2,1)
     plt.imshow(np.log(np.roll(np.roll(tfin,-xs,0),-xs,1)),cmap='jet') #,vmin=-0.03,vmax=0.03)
