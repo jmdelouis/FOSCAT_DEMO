@@ -437,13 +437,13 @@ def main():
 
             # Compute sigma for each CWST coeffients using simulation
 
-            basen=scat_op.eval(model_map1[0],image2=model_map2[0]+noise[0,0],mask=mask)
+            basen=scat_op.eval(model_map1[0]+noise[0,0],image2=model_map2[0],mask=mask)
 
             avv=basen-refI
             savv=avv
             savv2=avv*avv
             for i in range(1,nsim):
-                basen=scat_op.eval(model_map1[0],image2=model_map2[0]+noise[0,i],mask=mask)
+                basen=scat_op.eval(model_map1[0]+noise[0,i],image2=model_map2[0],mask=mask)
                 avv=(basen-refI)
                 savv=savv+avv
                 savv2=savv2+avv*avv
@@ -466,13 +466,13 @@ def main():
 
             # Compute sigma for each CWST coeffients using simulation
 
-            basen=scat_op.eval(model_map1[1],image2=model_map2[1]+noise[1,0],mask=mask)
+            basen=scat_op.eval(model_map1[1]+noise[1,0],image2=model_map2[1],mask=mask)
 
             avv=basen-refI
             savv=avv
             savv2=avv*avv
             for i in range(1,nsim):
-                basen=scat_op.eval(model_map1[1],image2=model_map2[1]+noise[1,i],mask=mask)
+                basen=scat_op.eval(model_map1[1]+noise[1,i],image2=model_map2[1],mask=mask)
                 avv=(basen-refI)
                 savv=savv+avv
                 savv2=savv2+avv*avv
