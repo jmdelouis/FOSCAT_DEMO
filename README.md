@@ -13,9 +13,14 @@ pip install foscat
 
 ## compute a synthetic image
 ```
-python demo.py -n=32 -k -c -l
+python demo.py -n=32 -k -c -l -s=100
 ```
 The *demo.py* script serves as a demonstration of the capabilities of the foscat library. It utilizes the Cross Wavelet Scattering Transform to generate a Healpix map that possesses the same characteristics as a specified input map. 
+- ```-n=32``` computes map with nside=32.
+- ```-k``` uses 5x5 kernel.
+- ```-c``` uses Scattering Covariance.
+- ```-l``` uses LBFGS minimizer.
+- ```-s=100``` computes 100 steps. 
 ```
 python demo.py -n=8 [-c|--cov][-s|--steps=3000][-S=1234|--seed=1234][-x|--xstat] [-g|--gauss][-k|--k5x5][-d|--data][-o|--out][-K|--k128][-r|--orient] [-p|--path]
 
@@ -48,14 +53,14 @@ python plotdemo.py -n=32 -c
 The python scripts *demo2D.py* included in this package demonstrate how to use the foscat library to generate a 2D synthetic fields that have patterns with the same statistical properties as a specified 2D image. In this particular case, the input field is a sea surface temperature extracted from a north atlantic ocean simulation.
 
 ```
-python demo2D.py -n=32 -k -c
+python demo2d.py -n=32 -k -c
 ```
 
 # plot the result
 
 The following script generates a series of plots that showcase different aspects of the synthesis process using the *demo2D.py* script.
 ```
-python plotdemo.py -n=32 -c
+python plotdemo2d.py -n=32 -c
 ```
 
 
