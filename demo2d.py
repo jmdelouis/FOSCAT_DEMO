@@ -142,8 +142,7 @@ def main():
     omap=sy.run(imap,
                 EVAL_FREQUENCY = 10,
                 do_lbfgs=True,
-                NUM_EPOCHS = nstep,
-                SHOWGPU=True)
+                NUM_EPOCHS = nstep)
 
     #=================================================================================
     # STORE RESULTS
