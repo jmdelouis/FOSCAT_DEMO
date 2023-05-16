@@ -104,7 +104,7 @@ def main():
     mask=np.ones([3,12*nside*nside])
 
     for i in range(3):
-        mask[i,:]=dodown(np.load('MASK_GAL%s_256.npy'%(tab[i])),nside)
+        mask[i,:]=dodown(np.load('/travail/jdelouis/heal_cnn/MASK_GAL%s_256.npy'%(tab[i])),nside)
         
     #(refX-out).plot(name='Diff',color='purple',hold=False)
 

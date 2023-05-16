@@ -12,7 +12,7 @@ import foscat.Synthesis as synthe
     
 def usage():
     print(' This software is a demo of the foscat library:')
-    print('>python demo.py -n=8 [-c|--cov][-s|--steps=3000][-S=1234|--seed=1234][-x|--xstat] [-g|--gauss][-k|--k5x5][-d|--data][-o|--out][-K|--k128][-r|--orient] [-p|--path] [-r|rmask][-b|--batch][-l|--nsim]')
+    print('>python demo.py -n=8 [-c|--cov][-s|--steps=3000][-S=1234|--seed=1234][-x|--xstat] [-g|--gauss][-k|--k5x5][-d|--data][-o|--out][-K|--k128][-r|--orient] [-p|--path] [-r|rmask][-b|--batch][-l|--nsim][-v|--vsim]')
     print('-n : is the nside of the input map (nside max = 256 with the default map)')
     print('--cov (optional): use scat_cov instead of scat.')
     print('--steps (optional): number of iteration, if not specified 30 (use all available noise x30).')
@@ -50,8 +50,8 @@ def main():
         rank=0
         isMPI=False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:cS:s:ko:r:b:l:", \
-                                   ["nside", "cov","seed","steps","k5x5","out","orient","batch","nsim"])
+        opts, args = getopt.getopt(sys.argv[1:], "n:cS:s:ko:r:b:l:v", \
+                                   ["nside", "cov","seed","steps","k5x5","out","orient","batch","nsim","vsim"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -69,10 +69,14 @@ def main():
     norient=4
     nnoise=1
     nsim=100
+    dosim=False
     
     for o, a in opts:
+        print(o,a)
         if o in ("-c","--cov"):
             cov = True
+        elif o in ("-v","--vsim"):
+            dosim = True
         elif o in ("-n", "--nside"):
             nside=int(a[1:])
         elif o in ("-s", "--steps"):
@@ -146,21 +150,22 @@ def main():
 
     mapT=dodown(np.load('map_857_256_nest.npy'),nside)
     
-    if nside<=128:
-        im[0]=dodown(np.load('/export/home/jmdeloui/heal_cnn/Q_vansingel_256.npy'),nside)
-        im[1]=dodown(np.load('/export/home/jmdeloui/heal_cnn/U_vansingel_256.npy'),nside)
+    if dosim:
+        im[0]=np.sqrt(0.801)*dodown(np.load('/travail/jdelouis/heal_cnn/Q_vansingel_256.npy'),nside)
+        im[1]=np.sqrt(0.801)*dodown(np.load('/travail/jdelouis/heal_cnn/U_vansingel_256.npy'),nside)
         im1=im.copy()
         im2=im.copy()
 
     # level of noise added to map (this is for testing for smaller nside)
     # at nside=64 5 is a good number for this demo
     ampnoise=1
-    if nside<32:
-        ampnoise=100
-    if nside==32:
-        ampnoise=20
-    if nside==64:
-        ampnoise=10
+    if dosim:
+        if nside<32:
+            ampnoise=100
+        if nside==32:
+            ampnoise=20
+        if nside==64:
+            ampnoise=10
         
     nsim=nsim+1
     # read 100 noise simulation
@@ -172,15 +177,15 @@ def main():
     
     for i in range(nsim):
         for k in range(2):
-            noise[k,i]  = ampnoise*1E6*hp.ud_grade(hp.read_map('/export/home/jmdeloui/DownGrade_256/JAN18r60_%03d_353psb_353psb_full_IQU.fits'%(i+1),k+1),nside)[idx]
-            noise1[k,i] = ampnoise*1E6*hp.ud_grade(hp.read_map('/export/home/jmdeloui/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm1_IQU.fits'%(i+1),k+1),nside)[idx]
-            noise2[k,i] = ampnoise*1E6*hp.ud_grade(hp.read_map('/export/home/jmdeloui/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm2_IQU.fits'%(i+1),k+1),nside)[idx]
+            noise[k,i]  = ampnoise*1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_full_IQU.fits'%(i+1),k+1),nside)[idx]
+            noise1[k,i] = ampnoise*1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm1_IQU.fits'%(i+1),k+1),nside)[idx]
+            noise2[k,i] = ampnoise*1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm2_IQU.fits'%(i+1),k+1),nside)[idx]
 
     tab=['10','08','06','04']
     mask=np.ones([5,im.shape[1]])
     
     for i in range(4):
-        mask[1+i,:]=dodown(np.load('MASK_GAL%s_256.npy'%(tab[i])),nside)
+        mask[1+i,:]=dodown(np.load('/travail/jdelouis/heal_cnn/MASK_GAL%s_256.npy'%(tab[i])),nside)
         mask[1+i]/=mask[1+i].mean()
         
     #=================================================================================
@@ -192,18 +197,17 @@ def main():
     imap=np.zeros([2,12*nside**2])
     imap1=np.zeros([2,12*nside**2])
     imap2=np.zeros([2,12*nside**2])
-    if ampnoise==1 and nside==256:
-        amp=0
+
+    if dosim==False:
         for k in range(2):
             imap[k]=im[k]
             imap1[k]=im1[k]
             imap2[k]=im2[k]
     else:
-        amp=1.0
         for k in range(2):
-            imap[k]=im[k]+amp*noise[k,0]
-            imap1[k]=im[k]+amp*noise1[k,0]
-            imap2[k]=im[k]+amp*noise2[k,0]
+            imap[k]=im[k]+noise[k,0]
+            imap1[k]=im[k]+noise1[k,0]
+            imap2[k]=im[k]+noise2[k,0]
     
     noise=noise[:,1:]
     noise1=noise1[:,1:]
@@ -217,14 +221,14 @@ def main():
 
     l_slope=1.0
     r_format=True
-    all_type='float32'
+    all_type='float64'
     
     #=================================================================================
     # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
     #=================================================================================
     scat_op=sc.funct(NORIENT=4,          # define the number of wavelet orientation
                      KERNELSZ=KERNELSZ,  # define the kernel size
-                     OSTEP=0,            # get very large scale (nside=1)
+                     OSTEP=3,            # get very large scale (nside=1)
                      LAMBDA=lam,
                      TEMPLATE_PATH=scratch_path,
                      slope=l_slope,
@@ -283,9 +287,10 @@ def main():
         i = args[2]
         sig = args[3]
         imap= args[4]
+        #ref= args[5]
 
-        ref = scat_operator.eval(imap,image2=x[i],mask=mask)-bias
-        tmp = scat_operator.eval(x[i],image2=x[i],mask=mask)
+        ref = scat_operator.eval(x[i],image2=x[i],mask=mask)
+        tmp = scat_operator.eval(imap,image2=x[i],mask=mask)-bias
         
         learn = scat_operator.ldiff(sig,ref - tmp)
         
@@ -340,7 +345,9 @@ def main():
         
         return loss
 
-    allsize=5
+    allsize=7
+
+    init_map=imap.copy()
     
     for itt in range(4):
         # all mpi rank that are consistent with 0 are computing the loss for P(Q,U) ~ P(x[0]+n_q,x[1]+n_u)
@@ -366,7 +373,8 @@ def main():
 
             refX=scat_op.eval(imap[0],image2=imap[1],Auto=False,mask=mask)
 
-            savv.P00=0*savv.P00
+            #savv.P00=0*savv.P00
+            sig1.P00=10*sig1.P00
             
             loss1=synthe.Loss(lossX,scat_op,refX-savv,mask,sig1)
 
@@ -395,7 +403,8 @@ def main():
             savv2=savv2/(nsim)
             sig2=1/scat_op.sqrt(savv2-savv*savv)
             # create a loss class to declare it to the synthesis function
-            savv.P00=0*savv.P00
+            #savv.P00=0*savv.P00
+            sig2.P00=10*sig2.P00
             loss2=synthe.Loss(loss,scat_op,refR-savv,mask,0,sig2)
 
             # If parallel declare one synthesis function per mpi process
@@ -425,7 +434,8 @@ def main():
 
             refI=scat_op.eval(imap1[1],image2=imap2[1],mask=mask)
 
-            savv.P00=0*savv.P00
+            #savv.P00=0*savv.P00
+            sig3.P00=10*sig3.P00
             loss3=synthe.Loss(loss,scat_op,refI-savv,mask,1,sig3)
             
             if size>1:
@@ -436,26 +446,48 @@ def main():
             refI=scat_op.eval(model_map1[0],image2=model_map2[0],mask=mask)
 
             # Compute sigma for each CWST coeffients using simulation
-
-            basen=scat_op.eval(model_map1[0],image2=model_map2[0]+noise[0,0],mask=mask)
+            basen=scat_op.eval(model_map1[0]+noise[0,0],image2=model_map2[0],mask=mask)
+            basen2=scat_op.eval(model_map1[0]+noise1[0,0],image2=model_map2[0]+noise2[0,0],mask=mask)
 
             avv=basen-refI
             savv=avv
             savv2=avv*avv
+
+            avv=basen2-refI
+            savvR=avv
+            savvR2=avv*avv
+
             for i in range(1,nsim):
-                basen=scat_op.eval(model_map1[0],image2=model_map2[0]+noise[0,i],mask=mask)
+                basen=scat_op.eval(model_map1[0]+noise[0,i],image2=model_map2[0],mask=mask)
+                basen2=scat_op.eval(model_map1[0]+noise1[0,i],image2=model_map2[0]+noise2[0,i],mask=mask)
+
                 avv=(basen-refI)
                 savv=savv+avv
                 savv2=savv2+avv*avv
+
+                avv=(basen2-refI)
+                savvR=savvR+avv
+                savvR2=savvR2+avv*avv
                 
             savv=savv/(nsim)
             savv2=savv2/(nsim)
+
+            savvR=savv/(nsim)
+            savvR2=savv2/(nsim)
+
             if not cov:
                 savv2.S0=savv2.S0+1.0
-            sig4=1/scat_op.sqrt(savv2-savv*savv)
+                savvR2.S0=savvR2.S0+1.0
 
-            savv.P00=0*savv.P00
-            loss4=synthe.Loss(lossD,scat_op,savv,mask,0,sig4,imap[0])
+            sig4=1/scat_op.sqrt(savv2+savvR2-savv*savv-savvR*savvR)
+
+            #savv.P00=0*savv.P00
+            #savvR.P00=0*savvR.P00
+
+            sig4.P00=10*sig4.P00
+            refR=scat_op.eval(imap1[0],image2=imap2[0],mask=mask)
+
+            loss4=synthe.Loss(lossD,scat_op,savv,mask,0,sig4,imap[0],refR-savvR)
             
             if size>1:
                 sy = synthe.Synthesis([loss4])
@@ -466,25 +498,48 @@ def main():
 
             # Compute sigma for each CWST coeffients using simulation
 
-            basen=scat_op.eval(model_map1[1],image2=model_map2[1]+noise[1,0],mask=mask)
+            basen=scat_op.eval(model_map1[1]+noise[1,0],image2=model_map2[1],mask=mask)
+            basen2=scat_op.eval(model_map1[1]+noise1[1,0],image2=model_map2[1]+noise2[1,0],mask=mask)
 
             avv=basen-refI
             savv=avv
             savv2=avv*avv
+
+            avv=basen2-refI
+            savvR=avv
+            savvR2=avv*avv
+
             for i in range(1,nsim):
-                basen=scat_op.eval(model_map1[1],image2=model_map2[1]+noise[1,i],mask=mask)
+                basen=scat_op.eval(model_map1[1]+noise[1,i],image2=model_map2[1],mask=mask)
+                basen2=scat_op.eval(model_map1[1]+noise1[1,i],image2=model_map2[1]+noise2[1,i],mask=mask)
+
                 avv=(basen-refI)
                 savv=savv+avv
                 savv2=savv2+avv*avv
+
+                avv=(basen2-refI)
+                savvR=savvR+avv
+                savvR2=savvR2+avv*avv
                 
             savv=savv/(nsim)
             savv2=savv2/(nsim)
+
+            savvR=savv/(nsim)
+            savvR2=savv2/(nsim)
+
             if not cov:
                 savv2.S0=savv2.S0+1.0
-            sig5=1/scat_op.sqrt(savv2-savv*savv)
+                savvR2.S0=savvR2.S0+1.0
+
+            sig5=1/scat_op.sqrt(savv2-savv*savv+savvR2-savvR*savvR)
             
-            savv.P00=0*savv.P00
-            loss5=synthe.Loss(lossD,scat_op,savv,mask,1,sig5,imap[1])
+            #savv.P00=0*savv.P00
+            #savvR.P00=0*savvR.P00
+            sig5.P00=10*sig5.P00
+
+            refR=scat_op.eval(imap1[1],image2=imap2[1],mask=mask)
+
+            loss5=synthe.Loss(lossD,scat_op,savv,mask,1,sig5,imap[1],refR-savvR)
             
             if size>1:
                 sy = synthe.Synthesis([loss5])
@@ -509,13 +564,16 @@ def main():
                 
             savv=savv/(nsim)
             savv2=savv2/(nsim)
+            
             if not cov:
                 savv2.S0=savv2.S0+1.0
+
             sig6=1/scat_op.sqrt(savv2-savv*savv)
 
             refI=scat_op.eval(mapT,image2=imap[0],mask=mask)
             
-            savv.P00=0*savv.P00
+            #savv.P00=0*savv.P00
+            sig6.P00=10*sig6.P00
             loss6=synthe.Loss(lossT,scat_op,refI-savv,mask,0,sig6,mapT)
             
             if size>1:
@@ -542,12 +600,14 @@ def main():
             savv2=savv2/(nsim)
             if not cov:
                 savv2.S0=savv2.S0+1.0
+
             sig7=1/scat_op.sqrt(savv2-savv*savv)
             
             refI=scat_op.eval(mapT,image2=imap[1],mask=mask)
             
-            savv.P00=0*savv.P00
-            loss7=synthe.Loss(lossT,scat_op,refI-savv,mask,1,sig7,imap[1])
+            #savv.P00=0*savv.P00
+            sig7.P00=10*sig7.P00
+            loss7=synthe.Loss(lossT,scat_op,refI-savv,mask,1,sig7,mapT)
             
             if size>1:
                 sy = synthe.Synthesis([loss7])
@@ -559,18 +619,19 @@ def main():
         # RUN ON SYNTHESIS
         #=================================================================================
 
-        #imap=im
         number_of_sim=nsim
         if nnoise==1:
             number_of_sim=1
 
-        omap=sy.run(imap,
-                    EVAL_FREQUENCY = 1,
+        omap=sy.run(init_map,
+                    EVAL_FREQUENCY = 10,
                     NUM_EPOCHS = nstep,
                     SHOWGPU=True,
                     do_lbfgs=True,
                     axis=1,
                     MESSAGE='ITT%02d-'%(itt))
+
+        #nstep=int(nstep*1.25)
 
         #=================================================================================
         # STORE RESULTS
@@ -602,10 +663,12 @@ def main():
             np.save(outpath+'out_%s%d_map_%d.npy'%(outname,itt,nside),omap)
             np.save(outpath+'out_%s%d_log_%d.npy'%(outname,itt,nside),sy.get_history())
 
+
         # map use to compute the sigma noise. In this example uses the input map
         model_map=omap.copy()
         model_map1=omap.copy()
         model_map2=omap.copy()
+        #init_map=omap.copy()
 
     print('Computation Done')
     sys.stdout.flush()
