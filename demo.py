@@ -41,7 +41,7 @@ def main():
 
     cov=False
     nside=-1
-    nstep=1000
+    nstep=300
     docross=False
     dogauss=False
     KERNELSZ=3
@@ -219,8 +219,7 @@ def main():
                 NUM_EPOCHS = nstep,
                 LEARNING_RATE = 0.3,
                 EPSILON = 1E-15,
-                do_lbfgs=dolbfgs,
-                SHOWGPU=True)
+                do_lbfgs=dolbfgs)
 
     #=================================================================================
     # STORE RESULTS

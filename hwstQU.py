@@ -287,7 +287,6 @@ def main():
         i = args[2]
         sig = args[3]
         imap= args[4]
-        #ref= args[5]
 
         ref = scat_operator.eval(x[i],image2=x[i],mask=mask)
         tmp = scat_operator.eval(imap,image2=x[i],mask=mask)-bias
@@ -446,6 +445,7 @@ def main():
             refI=scat_op.eval(model_map1[0],image2=model_map2[0],mask=mask)
 
             # Compute sigma for each CWST coeffients using simulation
+
             basen=scat_op.eval(model_map1[0]+noise[0,0],image2=model_map2[0],mask=mask)
             basen2=scat_op.eval(model_map1[0]+noise1[0,0],image2=model_map2[0]+noise2[0,0],mask=mask)
 
@@ -460,7 +460,6 @@ def main():
             for i in range(1,nsim):
                 basen=scat_op.eval(model_map1[0]+noise[0,i],image2=model_map2[0],mask=mask)
                 basen2=scat_op.eval(model_map1[0]+noise1[0,i],image2=model_map2[0]+noise2[0,i],mask=mask)
-
                 avv=(basen-refI)
                 savv=savv+avv
                 savv2=savv2+avv*avv
@@ -481,13 +480,11 @@ def main():
 
             sig4=1/scat_op.sqrt(savv2+savvR2-savv*savv-savvR*savvR)
 
-            #savv.P00=0*savv.P00
-            #savvR.P00=0*savvR.P00
 
             sig4.P00=10*sig4.P00
             refR=scat_op.eval(imap1[0],image2=imap2[0],mask=mask)
 
-            loss4=synthe.Loss(lossD,scat_op,savv,mask,0,sig4,imap[0],refR-savvR)
+            loss4=synthe.Loss(lossD,scat_op,savv,mask,0,sig4,imap[0])
             
             if size>1:
                 sy = synthe.Synthesis([loss4])
@@ -533,8 +530,6 @@ def main():
 
             sig5=1/scat_op.sqrt(savv2-savv*savv+savvR2-savvR*savvR)
             
-            #savv.P00=0*savv.P00
-            #savvR.P00=0*savvR.P00
             sig5.P00=10*sig5.P00
 
             refR=scat_op.eval(imap1[1],image2=imap2[1],mask=mask)
