@@ -66,28 +66,6 @@ def main():
     else:
         import foscat.scat as sc
 
-    log= np.load(outpath+'out_%s_log_%d.npy'%(outname,nside))
-    plt.figure(figsize=(6,6))
-    plt.plot(np.arange(log.shape[0])+1,log,color='black')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlabel('Number of iteration')
-    plt.ylabel('Loss')
-
-    p=['Q','U']
-    for ii in range(2):
-        refX  = sc.read(outpath+'in_%s_%d_%d'%(outname,nside,ii))
-        start = sc.read(outpath+'st_%s_%d_%d'%(outname,nside,ii))
-
-        refX.plot(name='Model %s'%(p[ii]),lw=6)
-        for k in range(10):
-            out   = sc.read(outpath+'outn_%s_%d_%d_%d'%(outname,nside,ii,k))
-            out.plot(name='Noise[%d] %s'%(k,p[ii]),color='gray',hold=False,legend=(k==0))
-
-        out   = sc.read(outpath+'out_%s_%d_%d'%(outname,nside,ii))
-        start.plot(name='Input %s'%(p[ii]),color='orange',hold=False,lw=2)
-        out.plot(name='Output %s'%(p[ii]),color='red',hold=False,lw=2)
-            
                        
     def dodown(a,nout,axis=0):
         nin=int(np.sqrt(a.shape[axis]//12))
@@ -100,13 +78,12 @@ def main():
         if axis==1:
             return(np.mean(a.reshape(a.shape[0],12*nout*nout,(nin//nout)**2),2))
 
-    tab=['10','08','06']
-    mask=np.ones([3,12*nside*nside])
+    tab=['10','08','06','04']
+    mask=np.ones([4,12*nside*nside])
 
-    for i in range(3):
+    for i in range(4):
         mask[i,:]=dodown(np.load('/travail/jdelouis/heal_cnn/MASK_GAL%s_256.npy'%(tab[i])),nside)
-        
-    #(refX-out).plot(name='Diff',color='purple',hold=False)
+
 
     im = np.load(outpath+'in_%s_map_%d.npy'%(outname,nside))
     try:
@@ -118,6 +95,56 @@ def main():
     sm2 = np.load(outpath+'st2_%s_map_%d.npy'%(outname,nside))
     om = np.load(outpath+'out_%s_map_%d.npy'%(outname,nside))
 
+    try:
+        log= np.load(outpath+'out_%s_log_%d.npy'%(outname,nside))
+        plt.figure(figsize=(6,6))
+        plt.plot(np.arange(log.shape[0])+1,log,color='black')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('Number of iteration')
+        plt.ylabel('Loss')
+    except:
+        print('No log as been already saved')
+
+    try:
+        p=['Q','U']
+        for ii in range(2):
+            refX  = sc.read(outpath+'in_%s_%d_%d'%(outname,nside,ii))
+            start = sc.read(outpath+'st_%s_%d_%d'%(outname,nside,ii))
+
+            refX.plot(name='Model %s'%(p[ii]),lw=6)
+            for k in range(10):
+                out   = sc.read(outpath+'outn_%s_%d_%d_%d'%(outname,nside,ii,k))
+                out.plot(name='Noise[%d] %s'%(k,p[ii]),color='gray',hold=False,legend=(k==0))
+
+            out   = sc.read(outpath+'out_%s_%d_%d'%(outname,nside,ii))
+            start.plot(name='Input %s'%(p[ii]),color='orange',hold=False,lw=2)
+            out.plot(name='Output %s'%(p[ii]),color='red',hold=False,lw=2)
+    except:
+        #=================================================================================
+        # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
+        #=================================================================================
+        scat_op=sc.funct(NORIENT=4,          # define the number of wavelet orientation
+                         KERNELSZ=3,  # define the kernel size
+                         OSTEP=0,            # get very large scale (nside=1)
+                         LAMBDA=1.2,
+                         TEMPLATE_PATH='data',
+                         slope=1.0,
+                         use_R_format=True,
+                         all_type='float32')
+
+        print('No scat has been saved yet, compute it')
+        for i in range(2):
+            refX = scat_op.eval_fast(im[i],image2=im[i],mask=mask)
+            refX.plot(name='Model %s'%(p[ii]),lw=6)
+            refX = scat_op.eval_fast(sm1[i],image2=sm2[i],mask=mask)
+            refX.plot(name='Cross %s'%(p[ii]),color='purple',hold=False,lw=2)
+            start = scat_op.eval_fast(sm[i],image2=sm[i],mask=mask)
+            out = scat_op.eval_fast(om[i],image2=om[i],mask=mask)
+            start.plot(name='Input %s'%(p[ii]),color='orange',hold=False,lw=2)
+            out.plot(name='Output %s'%(p[ii]),color='red',hold=False,lw=2)
+        
+        
     print(im.shape,om.shape)
 
     idx=hp.ring2nest(nside,np.arange(12*nside**2))

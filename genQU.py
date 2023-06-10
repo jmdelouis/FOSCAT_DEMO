@@ -24,7 +24,54 @@ def usage():
     print('--orient(optional): If not specified use 4 orientation')
     print('--batch (optional): number of available batch (default 100)')
     exit(0)
+    # function that generate map with the proper powerspectrum for each mask from noisy map
     
+def computespectromap(itmp,mask,lmin=50,loff=10):
+    cl={}
+    imap=(mask[0]-mask[1])*itmp
+    nside=int(np.sqrt(itmp.shape[1]//12))
+    idx=hp.ring2nest(nside,np.arange(12*nside**2))
+    idx2=hp.nest2ring(nside,np.arange(12*nside**2))
+    l,m=hp.Alm.getlm(lmax=3*nside-1)
+    for k in range(itmp.shape[0]):
+        for i in range(1,mask.shape[0]):
+            if i<mask.shape[0]-1:
+                dmask=mask[i]-mask[i+1]
+            else:
+                dmask=mask[i]
+            cl=hp.anafast(((dmask)*itmp[k])[idx],map2=((dmask)*itmp[k])[idx])
+            a=np.polyfit(np.log(np.arange(lmin-loff)+loff),np.log(cl[loff:lmin]),1)
+            clmod=np.exp(a[1]+a[0]*np.log(np.arange(nside*3)))
+            clmod[0]=0.0
+            tf=np.sqrt(clmod/cl)
+            tf[0:lmin]=1.0
+            alm=hp.map2alm(((dmask)*itmp[k])[idx])
+            imap[k]=imap[k]+hp.alm2map(alm*tf[l],nside)[idx2]
+    return imap
+
+def check_unseen(im,nest=False):
+    nin=int(np.sqrt(im.shape[0]//12))
+    idx=np.where(im<-1E20)[0]
+    if idx.shape[0]>0:
+        print('UNSEEN DETECTED ',nin)
+        t,p=hp.pix2ang(nin,idx,nest=nest)
+        lidx=hp.ang2pix(nin//2,t,p,nest=nest)
+        if nest==True:
+            sim=np.median(im.reshape(3*nin*nin,4),1)
+        else:
+            sim=hp.ud_grade(im,nin//2)
+        print(im[idx],sim[lidx])
+        check_unseen(sim,nest=nest)
+        for i in idx:
+            im[idx]=sim[lidx]
+    return(im)
+
+def ud_map(path,cmb,pol,nside):
+    val=1E6*(hp.read_map(path,pol)-cmb)
+    val[val<-1E20]=hp.UNSEEN
+    return check_unseen(hp.ud_grade(val,nside))
+
+
 def main():
     test_mpi=False
     for ienv in os.environ:
@@ -69,6 +116,7 @@ def main():
     norient=4
     nnoise=1
     nsim=100
+    nocomplex=True
     dosim=False
     
     for o, a in opts:
@@ -167,7 +215,7 @@ def main():
     # read data
     
 
-    refmap=dodown(np.load(outpath+'out_%s_map_%d.npy'%(outname,inside)),inside,axis=1)
+    refmap=dodown(np.load(outpath+'out_%s_map_%d.npy'%(outname,256)),inside,axis=1)
 
     """
     if add_scale>0:
@@ -184,18 +232,21 @@ def main():
 
     for i in range(2):
         cmb=hp.read_map('/travail/jdelouis/SROLL20/COM_CMB_IQU-smica_2048_R3.00_full.fits',1+i)
-        im[i]=1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_full.fits',1+i)-cmb,nside)[idx]
-        im1[i]=1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_halfmission-1.fits',1+i)-cmb,nside)[idx]
-        im2[i]=1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_halfmission-2.fits',1+i)-cmb,nside)[idx]
+        im[i]=ud_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_full.fits',cmb,1+i,nside)[idx]
+        im1[i]=ud_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_halfmission-1.fits',cmb,1+i,nside)
+        im2[i]=ud_map('/travail/jdelouis/SROLL20/SRoll20_SkyMap_353psb_halfmission-2.fits',cmb,1+i,nside)
 
     mapT=hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/SRoll22_SkyMap_857ghz_full.fits'),nside)[idx]
 
 
     tab=[6,4,2,1]
     mask=np.ones([5,im.shape[1]])
+    vmask=np.zeros([5])
     
     for i in range(4):
-        mask[1+i,:]=hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/HFI_Mask_GalPlane-apo5_2048_R2.00.fits',i),nside)[idx]
+        mask[1+i,:]=hp.ud_grade(hp.read_map('/travail/jdelouis/SROLL20/HFI_Mask_GalPlane-apo5_2048_R2.00.fits',tab[i]),nside)[idx]
+        print('Fsky ',i+1,mask[1+i].mean())
+        vmask[1+i]=mask[1+i].mean()
         mask[1+i]/=mask[1+i].mean()
 
     if add_scale>0:
@@ -205,15 +256,8 @@ def main():
         smapT=mapT
         smask=mask
 
-    imap=np.zeros([2,12*nside**2])
-    imap1=np.zeros([2,12*nside**2])
-    imap2=np.zeros([2,12*nside**2])
+    imap=computespectromap(im,mask)
 
-    for k in range(2):
-        imap[k]=im[k]
-        imap1[k]=im1[k]
-        imap2[k]=im2[k]
-    
     lam=1.2
     if KERNELSZ==5:
         lam=1.0
@@ -283,10 +327,10 @@ def main():
         mask = args[0]
         i = args[1]
         sig = args[2]
-        imap= args[3]
+        d_im= args[3]
         ref= args[4]
 
-        tmp = scat_operator.eval(imap,image2=x[i],mask=mask)
+        tmp = scat_operator.eval(d_im,image2=x[i],mask=mask)
         
         learn = scat_operator.ldiff(sig,ref - tmp)
         
@@ -333,7 +377,7 @@ def main():
         mask = args[1]
         sig = args[2]
         
-        tmp = scat_operator.eval(x[0],image2=x[1],mask=mask,Auto=False)
+        tmp = scat_operator.eval(x[0],image2=x[1],mask=mask,Auto=nocomplex)
 
         learn = scat_operator.ldiff(sig,ref -tmp)
         
@@ -351,7 +395,7 @@ def main():
     if rank%allsize==0%size:
 
         # Compute reference spectra
-        refX=scat_op.eval(refmap[0],image2=refmap[1],Auto=False,mask=smask)
+        refX=scat_op.eval(refmap[0],image2=refmap[1],Auto=nocomplex,mask=smask)
 
         #=================================================================================
         # Get noise to evaluate sigma for each loss
@@ -361,12 +405,10 @@ def main():
         savv2=None
 
         for i in range(nsim):
+            noise1 = 1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_full_IQU.fits'%(i+1),1),inside)[idx]
+            noise2 = 1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_full_IQU.fits'%(i+1),2),inside)[idx]
 
-
-            noise1 = 1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm1_IQU.fits'%(i+1),1),inside)[idx]
-            noise2 = 1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_hm2_IQU.fits'%(i+1),2),inside)[idx]
-
-            basen=scat_op.eval(refmap[0]+noise1,image2=refmap[1]+noise2,Auto=False,mask=smask)
+            basen=scat_op.eval(refmap[0]+noise1,image2=refmap[1]+noise2,Auto=nocomplex,mask=smask)
 
             avv=basen-refX
 
@@ -493,7 +535,7 @@ def main():
             
             noise  = 1E6*hp.ud_grade(hp.read_map('/travail/jdelouis/DownGrade_256/JAN18r60_%03d_353psb_353psb_full_IQU.fits'%(i+1),1),inside)[idx]
 
-            basen=scat_op.eval(refmap[0]+noise,image2=refmap[0],Auto=False,mask=smask)
+            basen=scat_op.eval(refmap[0]+noise,image2=refmap[0],mask=smask)
 
             avv=basen-refR
 
@@ -514,7 +556,7 @@ def main():
             sig4=sig4.extrapol(add_scale)
             refR=refR.extrapol(add_scale)
 
-        loss4=synthe.Loss(lossD,scat_op,mask,0,sig4,imap[0],refR)
+        loss4=synthe.Loss(lossD,scat_op,mask,0,sig4,im[0],refR)
             
         if size>1:
             sy = synthe.Synthesis([loss4])
@@ -555,7 +597,7 @@ def main():
             sig5=sig5.extrapol(add_scale)
             refI=refI.extrapol(add_scale)
 
-        loss5=synthe.Loss(lossD,scat_op,mask,1,sig5,imap[1],refI)
+        loss5=synthe.Loss(lossD,scat_op,mask,1,sig5,im[1],refI)
         
         if size>1:
             sy = synthe.Synthesis([loss5])
@@ -596,6 +638,9 @@ def main():
         if add_scale>0:
             sig6=sig6.extrapol(add_scale)
             refR=refR.extrapol(add_scale)
+
+        if not cov:
+            sig6.S0=sig6.S0*0.0+1.0
 
         loss6=synthe.Loss(lossT,scat_op,refR,mask,0,sig6,mapT)
             
@@ -639,6 +684,9 @@ def main():
         if add_scale>0:
             sig7=sig7.extrapol(add_scale)
             refI=refI.extrapol(add_scale)
+
+        if not cov:
+            sig7.S0=sig7.S0*0.0+1.0
 
         loss7=synthe.Loss(lossT,scat_op,refI,mask,1,sig7,mapT)
             
