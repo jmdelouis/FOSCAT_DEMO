@@ -8,6 +8,11 @@ The last version of the foscat library can be installed using PyPi:
 ```
 pip install foscat
 ```
+Load the FOSCAT_DEMO package from github.
+```
+git clone git@github.com:jmdelouis/FOSCAT_DEMO.git
+```
+
 
 # Spherical data example
 
