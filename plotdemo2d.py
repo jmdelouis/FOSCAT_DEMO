@@ -68,6 +68,8 @@ def main():
     plt.plot(np.arange(log.shape[0])+1,log,color='black')
     plt.xscale('log')
     plt.yscale('log')
+    plt.ylabel('Loss')
+    plt.xlabel('Number of iteration')
 
     refX.plot(name='Model',lw=6)
     start.plot(name='Input',color='orange',hold=False)

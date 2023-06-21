@@ -19,7 +19,7 @@ def usage():
     print('--xstat (optional): work with cross statistics.')
     print('--gauss (optional): convert Venus map in gaussian field.')
     print('--k5x5  (optional): Work with a 5x5 kernel instead of a 3x3.')
-    print('--data  (optional): If not specified use Venu_256.npy.')
+    print('--data  (optional): If not specified use TURBU.npy.')
     print('--out   (optional): If not specified save in *_demo_*.')
     print('--path  (optional): Define the path where output file are written (default data)')
     exit(0)
@@ -61,8 +61,6 @@ def main():
         elif o in ("-d", "--data"):
             data=a[1:]
             print('Read data from ',data)
-        elif o in ("-x", "--xstat"):
-            docross=True
         elif o in ("-g", "--gauss"):
             dogauss=True
         elif o in ("-k", "--k5x5"):
@@ -115,44 +113,8 @@ def main():
                      OSTEP=0,           # get very large scale (nside=1)
                      LAMBDA=lam,
                      TEMPLATE_PATH=scratch_path,
-                     slope=1.0,
-                     gpupos=2,
-                     use_R_format=True,
                      chans=1,
-                     DODIV=False,
-                     all_type='float64')
-    #=================================================================================
-    # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
-    #=================================================================================
-    scat_op2=sc.funct(NORIENT=4,          # define the number of wavelet orientation
-                     KERNELSZ=KERNELSZ,  # define the kernel size
-                     OSTEP=0,           # get very large scale (nside=1)
-                     LAMBDA=lam,
-                     TEMPLATE_PATH=scratch_path,
-                     slope=1.0,
-                     gpupos=2,
-                     use_R_format=True,
-                     chans=1,
-                     DODIV=True,
-                     all_type='float64')
-
-
-    r,i=scat_op.convol(im)
-
-    print(r.shape)
-    for i in range(4):
-        plt.subplot(2,2,1+i)
-        plt.imshow(np.sqrt((r*r+i*i)[:,:,i].numpy()),cmap='jet')
-
-    plt.figure()
-    r,i=scat_op2.convol(im)
-
-    print(r.shape)
-    for i in range(4):
-        plt.subplot(2,2,1+i)
-        plt.imshow(np.sqrt((r*r+i*i)[:,:,i].numpy()),cmap='jet')
-    plt.show()
-    exit(0)
+                     all_type='float32')
     
     #=================================================================================
     # DEFINE A LOSS FUNCTION AND THE SYNTHESIS
@@ -163,19 +125,13 @@ def main():
         ref = args[0]
         im  = args[1]
 
-        if docross:
-            learn=scat_operator.eval(im,image2=x,Imaginary=True)
-        else:
-            learn=scat_operator.eval(x)
+        learn=scat_operator.eval(x)
             
         loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
 
         return(loss)
 
-    if docross:
-        refX=scat_op.eval(im,image2=im,Imaginary=True,)
-    else:
-        refX=scat_op.eval(im)
+    refX=scat_op.eval(im)
 
     loss1=synthe.Loss(lossX,scat_op,refX,im)
         
@@ -188,21 +144,16 @@ def main():
     imap=np.random.randn(nside,nside)
     
     omap=sy.run(imap,
-                DECAY_RATE=0.9995,
-                NUM_EPOCHS = nstep,
-                LEARNING_RATE = 0.3,
-                EPSILON = 1E-15,
-                SHOWGPU=True)
+                EVAL_FREQUENCY = 10,
+                do_lbfgs=True,
+                NUM_EPOCHS = nstep)
 
     #=================================================================================
     # STORE RESULTS
     #=================================================================================
-    if docross:
-        start=scat_op.eval(im,image2=imap)
-        out =scat_op.eval(im,image2=omap)
-    else:
-        start=scat_op.eval(imap)
-        out =scat_op.eval(omap)
+    
+    start=scat_op.eval(imap)
+    out =scat_op.eval(omap)
     
     np.save(outpath+'in2d_%s_map_%d.npy'%(outname,nside),im)
     np.save(outpath+'st2d_%s_map_%d.npy'%(outname,nside),imap)
