@@ -119,11 +119,40 @@ def main():
                      gpupos=2,
                      use_R_format=True,
                      chans=1,
+                     DODIV=False,
+                     all_type='float64')
+    #=================================================================================
+    # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
+    #=================================================================================
+    scat_op2=sc.funct(NORIENT=4,          # define the number of wavelet orientation
+                     KERNELSZ=KERNELSZ,  # define the kernel size
+                     OSTEP=0,           # get very large scale (nside=1)
+                     LAMBDA=lam,
+                     TEMPLATE_PATH=scratch_path,
+                     slope=1.0,
+                     gpupos=2,
+                     use_R_format=True,
+                     chans=1,
                      DODIV=True,
                      all_type='float64')
 
-    scat_op.plot_ww()
+
+    r,i=scat_op.convol(im)
+
+    print(r.shape)
+    for i in range(4):
+        plt.subplot(2,2,1+i)
+        plt.imshow(np.sqrt((r*r+i*i)[:,:,i].numpy()),cmap='jet')
+
+    plt.figure()
+    r,i=scat_op2.convol(im)
+
+    print(r.shape)
+    for i in range(4):
+        plt.subplot(2,2,1+i)
+        plt.imshow(np.sqrt((r*r+i*i)[:,:,i].numpy()),cmap='jet')
     plt.show()
+    exit(0)
     
     #=================================================================================
     # DEFINE A LOSS FUNCTION AND THE SYNTHESIS
