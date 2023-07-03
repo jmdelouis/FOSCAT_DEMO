@@ -10,7 +10,7 @@ pip install foscat
 ```
 Load the FOSCAT_DEMO package from github.
 ```
-git clone git@github.com:jmdelouis/FOSCAT_DEMO.git
+git clone https://github.com/jmdelouis/FOSCAT_DEMO.git
 ```
 
 
