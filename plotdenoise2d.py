@@ -40,6 +40,7 @@ def main():
             print(o,a)
             assert False, "unhandled option"
 
+    
     log=np.load('out2d_%s_log_%d.npy'%(outname,nside))
     
     plt.figure(figsize=(6,6))
@@ -51,7 +52,15 @@ def main():
     
     im=np.load('in2d_%s_map_%d.npy'%(outname,nside))
     omap=np.load('out2d_%s_map_%d.npy'%(outname,nside))
-    
+
+    tf1=abs(np.fft.fft2(im))
+    tf2=abs(np.fft.fft2(omap))
+    xs=nside//2
+    plt.subplot(1,2,1)
+    plt.imshow(np.log(np.roll(np.roll(tf1,-xs,0),-xs,1)),cmap='jet',vmin=-1,vmax=2) #,vmin=-0.03,vmax=0.03)
+    plt.subplot(1,2,2)
+    plt.imshow(np.log(np.roll(np.roll(tf2,-xs,0),-xs,1)),cmap='jet',vmin=-1,vmax=2) #,vmin=-0.03,vmax=0.03)
+    plt.show()
     n=im.shape[0]
     amp=im.std()*3
     plt.figure(figsize=(16,5))

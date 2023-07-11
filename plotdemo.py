@@ -70,7 +70,7 @@ def main():
     refX  = sc.read(outpath+'in_%s_%d'%(outname,nside))
     start = sc.read(outpath+'st_%s_%d'%(outname,nside))
     out   = sc.read(outpath+'out_%s_%d'%(outname,nside))
-
+    
     log= np.load(outpath+'out_%s_log_%d.npy'%(outname,nside))
     plt.figure(figsize=(6,6))
     plt.plot(np.arange(log.shape[0])+1,log,color='black')

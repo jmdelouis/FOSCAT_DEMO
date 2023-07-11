@@ -152,10 +152,26 @@ def main():
     
     def loss_function(x,scat_operator,args):
         
+        im = args[0]
+        sigma  = args[1]
+        bias  = args[2]
+
+        ref = scat_operator.eval(im,image2=x)-bias
+        tmp = scat_operator.eval(x,image2=x)
+            
+        learn = scat_operator.ldiff(sigma,ref - tmp)
+
+        loss = scat_operator.reduce_mean(learn)
+        
+        return(loss)
+    
+    def loss_residu(x,scat_operator,args):
+        
         ref = args[0]
         sigma  = args[1]
+        im = args[2]
 
-        tmp = scat_operator.eval(x)
+        tmp = scat_operator.eval(im-x)
             
         learn = scat_operator.ldiff(sigma,ref - tmp)
 
@@ -167,21 +183,27 @@ def main():
 
     nsim=100
     imap=im.copy()
-
+    model=imap.copy()
+    
     for itt in range(4):
-        ref=scat_op.eval(imap)
+        ref=scat_op.eval(model,image2=model)
         noise=np.fft.ifft2(np.fft.fft2(np.random.randn(2*xs,2*xs))*tf).real
-        tmp=scat_op.eval(imap+noise)-ref
+        tmp=scat_op.eval(model+noise,image2=model)-ref
         savv=tmp
         savv2=tmp*tmp
+        tmp=scat_op.eval(noise)
+        navv=tmp
         for i in range(1,nsim):
             noise=np.fft.ifft2(np.fft.fft2(np.random.randn(2*xs,2*xs))*tf).real
-            tmp=scat_op.eval(imap+noise)-ref
+            tmp=scat_op.eval(model+noise,image2=model)-ref
             savv=savv+tmp
             savv2=savv2+tmp*tmp
+            tmp=scat_op.eval(noise)
+            navv=navv+tmp
 
         savv=savv/(nsim)
         savv2=savv2/(nsim)
+        navv=navv/(nsim)
 
         # manage the 0 problem
         if not cov:
@@ -189,11 +211,11 @@ def main():
         
         sigma=1/scat_op.sqrt(savv2-savv*savv)
     
-        ref=scat_op.eval(im)
-    
-        loss1=synthe.Loss(loss_function,scat_op,ref-savv,sigma)
+        loss1=synthe.Loss(loss_function,scat_op,im,sigma,savv)
+
+        loss2=synthe.Loss(loss_residu,scat_op,navv,sigma,scat_op.to_R(im,chans=1))
         
-        sy = synthe.Synthesis([loss1])
+        sy = synthe.Synthesis([loss1,loss2])
         #=================================================================================
         # RUN ON SYNTHESIS
         #=================================================================================
@@ -214,7 +236,7 @@ def main():
         np.save('out2d_%s%d_map_%d.npy'%(outname,itt,nside),omap)
         np.save('out2d_%s%d_log_%d.npy'%(outname,itt,nside),sy.get_history())
 
-        imap=omap.numpy().copy()
+        model=omap.numpy().copy()
 
     print('Computation Done')
     sys.stdout.flush()

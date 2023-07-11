@@ -12,11 +12,13 @@ def usage():
     print('--out     (optional): If not specified save in *_demo_*.')
     print('--map=jet (optional): If not specified use cmap=jet')
     print('--geo     (optional): If specified use cartview')
+    print('--vmin|-i    (optional): specify the minimum value')
+    print('--vmax|-a    (optional): specify the maximum value')
     exit(0)
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:g", ["nside", "cov","out","map","geo"])
+        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:gi:a:", ["nside", "cov","out","map","geo","vmin","vmax"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -28,6 +30,8 @@ def main():
     outname='demo'
     cmap='jet'
     docart=False
+    vmin=-3
+    vmax=3
     
     for o, a in opts:
         if o in ("-c","--cov"):
@@ -40,11 +44,15 @@ def main():
             nside=int(a[1:])
         elif o in ("-o", "--out"):
             outname=a[1:]
+        elif o in ("-i", "--vmin"):
+            vmin=float(a[1:])
+        elif o in ("-a", "--vmax"):
+            vmax=float(a[1:])
         else:
             print(o,a)
             assert False, "unhandled option"
 
-    if nside<2 or nside!=2**(int(np.log(nside)/np.log(2))) or nside>256:
+    if nside<2 or nside!=2**(int(np.log(nside)/np.log(2))):
         print('nside should be a pwer of 2 and in [2,...,256]')
         exit(0)
 
@@ -70,7 +78,7 @@ def main():
     refX.plot(name='Model',lw=6)
     start.plot(name='Input',color='orange',hold=False)
     out.plot(name='Output',color='red',hold=False)
-    (refX-out).plot(name='Diff',color='purple',hold=False)
+    #(refX-out).plot(name='Diff',color='purple',hold=False)
 
     im = np.load('in2d_%s_map_%d.npy'%(outname,nside))
     sm = np.load('st2d_%s_map_%d.npy'%(outname,nside))
@@ -79,16 +87,16 @@ def main():
     n=im.shape[0]
     plt.figure(figsize=(10,6))
     plt.subplot(2,2,1)
-    plt.imshow(im,cmap='jet',vmin=-3,vmax=3,origin='lower',aspect='auto')
+    plt.imshow(im,cmap=cmap,vmin=vmin,vmax=vmax,origin='lower',aspect='auto')
     plt.title('Model')
     plt.subplot(2,2,2)
-    plt.imshow(sm,cmap='jet',vmin=-3,vmax=3,origin='lower',aspect='auto')
+    plt.imshow(sm,cmap=cmap,vmin=vmin,vmax=vmax,origin='lower',aspect='auto')
     plt.title('Start')
     plt.subplot(2,2,3)
-    plt.imshow(om,cmap='jet',vmin=-3,vmax=3,origin='lower',aspect='auto')
+    plt.imshow(om,cmap=cmap,vmin=vmin,vmax=vmax,origin='lower',aspect='auto')
     plt.title('Synthesis')
     plt.subplot(2,2,4)
-    plt.imshow(sm-om,cmap='jet',vmin=-3,vmax=3,origin='lower',aspect='auto')
+    plt.imshow(sm-om,cmap=cmap,vmin=vmin,vmax=vmax,origin='lower',aspect='auto')
     plt.title('Start-Synthesis')
     plt.show()
 
