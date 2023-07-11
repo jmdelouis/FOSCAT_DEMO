@@ -19,7 +19,7 @@ def usage():
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:gi:a:", ["nside", "cov","out","map","geo","vmin","vmax"])
+        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:gi:a:p:", ["nside", "cov","out","map","geo","vmin","vmax","path"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"

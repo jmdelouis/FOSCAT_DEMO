@@ -14,11 +14,13 @@ def usage():
     print('--geo     (optional): If specified use cartview')
     print('--vmin|-i    (optional): specify the minimum value')
     print('--vmax|-a    (optional): specify the maximum value')
+    print('--path  (optional): Define the path where output file are written (default data)')
     exit(0)
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:gi:a:", ["nside", "cov","out","map","geo","vmin","vmax"])
+        opts, args = getopt.getopt(sys.argv[1:], "n:co:m:gi:a:", ["nside", "cov","out","map","geo","vmin","vmax","path"])
+        
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -32,6 +34,7 @@ def main():
     docart=False
     vmin=-3
     vmax=3
+    outpath='data/'
     
     for o, a in opts:
         if o in ("-c","--cov"):
@@ -48,6 +51,8 @@ def main():
             vmin=float(a[1:])
         elif o in ("-a", "--vmax"):
             vmax=float(a[1:])
+        elif o in ("-p", "--path"):
+            outpath=a[1:]
         else:
             print(o,a)
             assert False, "unhandled option"
@@ -63,11 +68,11 @@ def main():
     else:
         import foscat.scat as sc
 
-    refX  = sc.read('in2d_%s_%d'%(outname,nside))
-    start = sc.read('st2d_%s_%d'%(outname,nside))
-    out   = sc.read('out2d_%s_%d'%(outname,nside))
+    refX  = sc.read(outpath+'in2d_%s_%d'%(outname,nside))
+    start = sc.read(outpath+'st2d_%s_%d'%(outname,nside))
+    out   = sc.read(outpath+'out2d_%s_%d'%(outname,nside))
 
-    log= np.load('out2d_%s_log_%d.npy'%(outname,nside))
+    log= np.load(outpath+'out2d_%s_log_%d.npy'%(outname,nside))
     plt.figure(figsize=(6,6))
     plt.plot(np.arange(log.shape[0])+1,log,color='black')
     plt.xscale('log')
@@ -80,9 +85,9 @@ def main():
     out.plot(name='Output',color='red',hold=False)
     #(refX-out).plot(name='Diff',color='purple',hold=False)
 
-    im = np.load('in2d_%s_map_%d.npy'%(outname,nside))
-    sm = np.load('st2d_%s_map_%d.npy'%(outname,nside))
-    om = np.load('out2d_%s_map_%d.npy'%(outname,nside))
+    im = np.load(outpath+'in2d_%s_map_%d.npy'%(outname,nside))
+    sm = np.load(outpath+'st2d_%s_map_%d.npy'%(outname,nside))
+    om = np.load(outpath+'out2d_%s_map_%d.npy'%(outname,nside))
 
     n=im.shape[0]
     plt.figure(figsize=(10,6))
