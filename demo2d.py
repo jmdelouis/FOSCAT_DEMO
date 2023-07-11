@@ -44,7 +44,7 @@ def main():
     seed=1234
     outname='demo'
     outpath='data/'
-    data="TURBU.npy"
+    data="data/TURBU.npy"
     
     for o, a in opts:
         if o in ("-c","--cov"):
