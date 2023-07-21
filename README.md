@@ -4,8 +4,7 @@ The python scripts *demo.py* included in this package demonstrate how to use the
 
 # Install foscat library
 
-Before installing, make sure you have python installed in your enviroment.  For mac users it is recomended to use python=3.9*.  
-
+Before installing, make sure you have python installed in your enviroment.  
 The last version of the foscat library can be installed using PyPi:
 ```
 pip install foscat
@@ -14,6 +13,32 @@ Load the FOSCAT_DEMO package from github.
 ```
 git clone https://github.com/jmdelouis/FOSCAT_DEMO.git
 ```
+
+
+##  Recommended installing procedures  for mac users 
+It is recomended to use python=3.9*.  
+```
+micromamba create -n FOSCAT
+micromamba install -n FOSCAT ‘python==3.9*’
+micromamba activate FOSCAT
+pip install foscat
+git clone https://github.com/jmdelouis/FOSCAT_DEMO.git
+
+```
+
+##  Recommended installing procedures  HPC users 
+It is recomended to install tensorflow in advance.  For [DATARMOR](https://pcdm.ifremer.fr/Equipement)  for using GPU ; 
+
+```
+micromamba create -n FOSCAT
+micromamba install -n FOSCAT ‘python==3.9*’
+micromamba install -n FOSCAT ‘tensorflow==2.11.0’
+micromamba activate FOSCAT
+pip install foscat
+git clone https://github.com/jmdelouis/FOSCAT_DEMO.git
+
+```
+
 
 
 # Spherical data example
