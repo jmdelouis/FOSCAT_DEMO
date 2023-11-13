@@ -151,6 +151,7 @@ def main():
                      JmaxDelta=0,        # The used Jmax is Jmax-JmaxDelta
                      LAMBDA=lam,
                      TEMPLATE_PATH=scratch_path,
+                     use_R_format=False,     # FOSCAT version>2.3: if False high quality but slow, if True low quality but fast computation.
                      all_type='float32',
                      nstep_max=instep)
     
