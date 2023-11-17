@@ -74,8 +74,8 @@ def main():
             norient=int(a[1:])
             print('Use %d orientations'%(norient))
         elif o in ("-m", "--mask"):
-            imask=np.load(a[1:])
-            print('Use %s mask'%(a[1:]))
+            imask=np.load(a)
+            print('Use %s mask'%(a))
         elif o in ("-p", "--path"):
             outpath=a[1:]
         else:
