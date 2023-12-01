@@ -118,6 +118,7 @@ def main():
                      JmaxDelta=0,        # Work with all large scales
                      LAMBDA=lam,
                      TEMPLATE_PATH=scratch_path,
+                     use_R_format=True,
                      Healpix=False,      # d not work with Healpix pixelisation (mainly 2D)
                      all_type='float32')
     
