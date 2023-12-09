@@ -82,10 +82,10 @@ def main():
     # Choose the type of Scattering Transform to be used
     #=================================================================================
     if cov:
-        import foscat.scat_cov2D as sc
+        import foscat.scat_cov1D as sc
         print('Work with ScatCov')
     else:
-        import foscat.scat2D as sc
+        import foscat.scat1D as sc
         print('Work with Scat')
         
     #=================================================================================
@@ -97,10 +97,9 @@ def main():
     #=================================================================================
     # Get data
     #=================================================================================
-    im=np.load(data)
-    if nside<im.shape[0]:
-        im=im[im.shape[0]//2-nside//2:im.shape[0]//2+nside//2,
-              im.shape[1]//2-nside//2:im.shape[1]//2+nside//2]
+    im=np.load('press.npy')
+
+    l1=im[700:700+nside]
         
     #=================================================================================
     # Generate a random noise with the same coloured than the input data
@@ -113,35 +112,31 @@ def main():
     #=================================================================================
     # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
     #=================================================================================
-    scat_op=sc.funct(NORIENT=4,          # define the number of wavelet orientation
-                     KERNELSZ=KERNELSZ,  # define the kernel size
+    scat_op=sc.funct(KERNELSZ=5,  # define the kernel size
                      JmaxDelta=0,        # Work with all large scales
-                     padding='SAME',
                      TEMPLATE_PATH=scratch_path,
+                     padding='VALID',
                      all_type='float32')
     
     #=================================================================================
     # DEFINE A LOSS FUNCTION AND THE SYNTHESIS
     #=================================================================================
 
-    mask=np.ones([1,im.shape[0],im.shape[1]])
-    mask[:,0:KERNELSZ//2,:]=0.0
-    mask[:,-KERNELSZ//2:,:]=0.0
-    mask[:,:,0:KERNELSZ//2]=0.0
-    mask[:,:,-KERNELSZ//2:]=0.0
-    
+    mask=np.ones([1,l1.shape[0]])
+    mask[0,:KERNELSZ//2]=0
+    mask[0,-KERNELSZ//2:]=0
     def The_loss(x,scat_operator,args):
         
         ref = args[0]
         mask= args[1]
 
-        learn=scat_operator.eval(x,mask=mask)
-            
+        learn=scat_operator.eval(abs(x))
+
         loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
 
         return(loss)
 
-    ref=scat_op.eval(im,mask=mask)
+    ref=scat_op.eval(l1,mask=mask)
 
     loss1=synthe.Loss(The_loss,scat_op,ref,mask)
         
@@ -151,28 +146,26 @@ def main():
     #=================================================================================
     np.random.seed(seed)
     
-    imap=np.random.randn(nside,nside)
+    np.save(outpath+'in1d_%s_map_%d.npy'%(outname,nside),l1)
     
-    omap=sy.run(imap,
-                EVAL_FREQUENCY = 100,
-                NUM_EPOCHS = nstep)
+    np.random.seed(100)
+    imap=np.random.rand(l1.shape[0])*np.std(l1)+np.median(l1)
+    
+    omap=abs(sy.run(imap,
+                    EVAL_FREQUENCY = 100,
+                    NUM_EPOCHS = nstep))
 
     #=================================================================================
     # STORE RESULTS
     #=================================================================================
     
-    start=scat_op.eval(imap)
-    out =scat_op.eval(omap)
-    
-    np.save(outpath+'in2d_%s_map_%d.npy'%(outname,nside),im)
-    np.save(outpath+'st2d_%s_map_%d.npy'%(outname,nside),imap)
-    np.save(outpath+'out2d_%s_map_%d.npy'%(outname,nside),omap)
-    np.save(outpath+'out2d_%s_log_%d.npy'%(outname,nside),sy.get_history())
+    np.save(outpath+'st1d_%s_map_%d.npy'%(outname,nside),imap)
+    np.save(outpath+'out1d_%s_map_%d.npy'%(outname,nside),omap)
+    np.save(outpath+'out1d_%s_log_%d.npy'%(outname,nside),sy.get_history())
 
-    ref.save(outpath+'in2d_%s_%d'%(outname,nside))
-    start.save(outpath+'st2d_%s_%d'%(outname,nside))
-    out.save(outpath+'out2d_%s_%d'%(outname,nside))
-
+    (scat_op.eval(omap)).save(outpath+'out1d_%s_%d'%(outname,nside))
+    (scat_op.eval(imap)).save(outpath+'st1d_%s_%d'%(outname,nside))
+    ref.save(outpath+'in1d_%s_%d'%(outname,nside))
     print('Computation Done')
     sys.stdout.flush()
 
