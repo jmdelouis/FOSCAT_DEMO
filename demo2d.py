@@ -101,7 +101,8 @@ def main():
     if nside<im.shape[0]:
         im=im[im.shape[0]//2-nside//2:im.shape[0]//2+nside//2,
               im.shape[1]//2-nside//2:im.shape[1]//2+nside//2]
-        
+    im=(im-np.median(im))/im.std()
+    
     #=================================================================================
     # Generate a random noise with the same coloured than the input data
     #=================================================================================
@@ -134,16 +135,17 @@ def main():
         
         ref = args[0]
         mask= args[1]
+        vref= args[2]
 
         learn=scat_operator.eval(x,mask=mask)
             
-        loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
+        loss=scat_operator.reduce_sum(scat_operator.square((ref-learn)/vref))
 
         return(loss)
 
-    ref=scat_op.eval(im,mask=mask)
+    ref,vref=scat_op.eval(im,mask=mask,calc_var=True)
 
-    loss1=synthe.Loss(The_loss,scat_op,ref,mask)
+    loss1=synthe.Loss(The_loss,scat_op,ref,mask,vref)
         
     sy = synthe.Synthesis([loss1])
     #=================================================================================
@@ -151,7 +153,7 @@ def main():
     #=================================================================================
     np.random.seed(seed)
     
-    imap=np.random.randn(nside,nside)
+    imap=np.random.randn(im.shape[0],im.shape[1])
     
     omap=sy.run(imap,
                 EVAL_FREQUENCY = 100,
@@ -161,14 +163,14 @@ def main():
     # STORE RESULTS
     #=================================================================================
     
-    start=scat_op.eval(imap)
-    out =scat_op.eval(omap)
-    
     np.save(outpath+'in2d_%s_map_%d.npy'%(outname,nside),im)
     np.save(outpath+'st2d_%s_map_%d.npy'%(outname,nside),imap)
     np.save(outpath+'out2d_%s_map_%d.npy'%(outname,nside),omap)
     np.save(outpath+'out2d_%s_log_%d.npy'%(outname,nside),sy.get_history())
 
+    start=scat_op.eval(imap)
+    out =scat_op.eval(omap)
+    
     ref.save(outpath+'in2d_%s_%d'%(outname,nside))
     start.save(outpath+'st2d_%s_%d'%(outname,nside))
     out.save(outpath+'out2d_%s_%d'%(outname,nside))

@@ -68,6 +68,7 @@ def main():
     else:
         import foscat.scat1D as sc
 
+    print('Save ',outpath+'out1d_%s_%d'%(outname,nside))
     refX  = sc.read(outpath+'in1d_%s_%d'%(outname,nside))
     start = sc.read(outpath+'st1d_%s_%d'%(outname,nside))
     out   = sc.read(outpath+'out1d_%s_%d'%(outname,nside))

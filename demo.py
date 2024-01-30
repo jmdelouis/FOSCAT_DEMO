@@ -160,18 +160,19 @@ def main():
     
     def The_loss(x,scat_operator,args):
         
-        ref = args[0]
+        ref  = args[0]
         mask = args[1]
+        sref = args[2]
 
         learn=scat_operator.eval(x,mask=mask)
 
-        loss=scat_operator.reduce_mean(scat_operator.square(ref-learn))      
+        loss=scat_operator.reduce_mean(scat_operator.square((ref-learn)/sref))      
 
         return(loss)
 
-    ref=scat_op.eval(im,mask=mask)
+    ref,sref=scat_op.eval(im,mask=mask,calc_var=True)
     
-    loss1=synthe.Loss(The_loss,scat_op,ref,mask)
+    loss1=synthe.Loss(The_loss,scat_op,ref,mask,sref)
         
     sy = synthe.Synthesis([loss1])
     #=================================================================================

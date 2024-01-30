@@ -97,9 +97,9 @@ def main():
     #=================================================================================
     # Get data
     #=================================================================================
-    im=np.load('press.npy')
+    im=np.load('TESTL1.npy')
 
-    l1=im[700:700+nside]
+    l1=im[0:nside]
         
     #=================================================================================
     # Generate a random noise with the same coloured than the input data
@@ -112,11 +112,7 @@ def main():
     #=================================================================================
     # COMPUTE THE WAVELET TRANSFORM OF THE REFERENCE MAP
     #=================================================================================
-    scat_op=sc.funct(KERNELSZ=5,  # define the kernel size
-                     JmaxDelta=0,        # Work with all large scales
-                     TEMPLATE_PATH=scratch_path,
-                     padding='VALID',
-                     all_type='float32')
+    scat_op=sc.funct(KERNELSZ=3)  # define the kernel size)
     
     #=================================================================================
     # DEFINE A LOSS FUNCTION AND THE SYNTHESIS
@@ -125,20 +121,29 @@ def main():
     mask=np.ones([1,l1.shape[0]])
     mask[0,:KERNELSZ//2]=0
     mask[0,-KERNELSZ//2:]=0
+    
     def The_loss(x,scat_operator,args):
         
         ref = args[0]
         mask= args[1]
+        refL= args[2]
+        refM= args[3]
 
-        learn=scat_operator.eval(abs(x))
+        learn=scat_operator.eval(x,mask=mask)
+        #learnL=scat_operator.eval(scat_operator.backend.bk_relu(x),mask=mask)
+        #learnM=scat_operator.eval(scat_operator.backend.bk_relu(-x),mask=mask)
 
         loss=scat_operator.reduce_sum(scat_operator.square(ref-learn))
+        #loss=loss+scat_operator.reduce_sum(scat_operator.square(refL-learnL))
+        #loss=loss+scat_operator.reduce_sum(scat_operator.square(refM-learnM))
 
         return(loss)
 
     ref=scat_op.eval(l1,mask=mask)
+    refL=scat_op.eval(scat_op.backend.bk_relu(scat_op.backend.constant(l1)),mask=mask)
+    refM=scat_op.eval(scat_op.backend.bk_relu(scat_op.backend.constant(-l1)),mask=mask)
 
-    loss1=synthe.Loss(The_loss,scat_op,ref,mask)
+    loss1=synthe.Loss(The_loss,scat_op,ref,mask,refL,refM)
         
     sy = synthe.Synthesis([loss1])
     #=================================================================================
@@ -148,12 +153,13 @@ def main():
     
     np.save(outpath+'in1d_%s_map_%d.npy'%(outname,nside),l1)
     
-    np.random.seed(100)
-    imap=np.random.rand(l1.shape[0])*np.std(l1)+np.median(l1)
+    imap=np.random.randn(l1.shape[0])*np.std(l1)+np.median(l1)
     
-    omap=abs(sy.run(imap,
-                    EVAL_FREQUENCY = 100,
-                    NUM_EPOCHS = nstep))
+    omap=sy.run(imap,
+                EVAL_FREQUENCY = 1,
+                NUM_EPOCHS = nstep)
+
+    oref=scat_op.eval(l1,mask=mask)
 
     #=================================================================================
     # STORE RESULTS
@@ -163,9 +169,10 @@ def main():
     np.save(outpath+'out1d_%s_map_%d.npy'%(outname,nside),omap)
     np.save(outpath+'out1d_%s_log_%d.npy'%(outname,nside),sy.get_history())
 
-    (scat_op.eval(omap)).save(outpath+'out1d_%s_%d'%(outname,nside))
-    (scat_op.eval(imap)).save(outpath+'st1d_%s_%d'%(outname,nside))
-    ref.save(outpath+'in1d_%s_%d'%(outname,nside))
+    print('Save ',outpath+'out1d_%s_%d'%(outname,nside))
+    (scat_op.eval(omap,mask=mask)).save(outpath+'out1d_%s_%d'%(outname,nside))
+    (scat_op.eval(imap,mask=mask)).save(outpath+'st1d_%s_%d'%(outname,nside))
+    (scat_op.eval(l1,mask=mask)).save(outpath+'in1d_%s_%d'%(outname,nside))
     print('Computation Done')
     sys.stdout.flush()
 
