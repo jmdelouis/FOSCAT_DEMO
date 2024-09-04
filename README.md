@@ -1,3 +1,7 @@
+# Short tutorial
+
+https://github.com/IAOCEA/demo-foscat-pangeo-eosc/blob/main/Demo_Synthesis.ipynb
+
 # FOSCAT_DEMO
 
 The python scripts *demo.py* included in this package demonstrate how to use the foscat library to generate synthetic fields that have patterns with the same statistical properties as a specified image.
